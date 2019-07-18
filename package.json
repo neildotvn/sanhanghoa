@@ -1,0 +1,19 @@
+{
+  "name": "sanhanghoa",
+  "version": "1.0.0",
+  "description": "backend for sanhanghoa written in NodeJs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Neilann/sanhanghoa.git"
+  },
+  "author": "neilann",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Neilann/sanhanghoa/issues"
+  },
+  "homepage": "https://github.com/Neilann/sanhanghoa#readme"
+}
