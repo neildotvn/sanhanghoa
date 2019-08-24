@@ -15,5 +15,16 @@
   "bugs": {
     "url": "https://github.com/Neilann/sanhanghoa/issues"
   },
-  "homepage": "https://github.com/Neilann/sanhanghoa#readme"
+  "homepage": "https://github.com/Neilann/sanhanghoa#readme",
+  "dependencies": {
+    "bcrypt": "^3.0.6",
+    "body-parser": "^1.19.0",
+    "dotenv": "^8.1.0",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "lodash": "^4.17.14",
+    "mongoose": "^5.6.5",
+    "pg": "^7.12.1",
+    "validator": "^11.1.0"
+  }
 }
