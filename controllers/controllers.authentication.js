@@ -1,22 +1,49 @@
-const model = require("../models/models.authentication");
 const userModel = require("../models/models.user");
+const authModel = require("../models/models.authentication");
 
 class AuthenticationController {
+    static verify(req, res) {
+        const result = authModel.verify(req);
+        if (!result.payload) {
+            res.status(result.status).send("Token invalid!");
+        } else {
+            res.status(result.status).send(result.payload);
+        }
+    }
+
     static register(req, res) {
         const regInfo = {
             phone: req.body.phone,
-            name: req.body.name,
             password: req.body.password
         };
         userModel
             .register(regInfo)
             .then(data => {
                 console.log(data);
-                res.status(200).send(data.rows[0]);
+                const user = data.rows[0];
+                const token = authModel.generateToken(user);
+                user.token = token;
+                res.status(200).send(user);
             })
             .catch(err => {
-                console.log(err);
-                res.status(406).send("Invalid input!");
+                if (err.status) {
+                    res.status(err.status).send(err.message);
+                } else {
+                    console.log(err);
+                }
+            });
+    }
+
+    static login(req, res) {
+        userModel
+            .login(req.body)
+            .then(data => res.status(200).send(data))
+            .catch(err => {
+                if (err.status) {
+                    res.status(err.status).send(err.message);
+                } else {
+                    console.log(err);
+                }
             });
     }
 }

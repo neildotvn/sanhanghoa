@@ -44,6 +44,17 @@ class Authentication {
     static generateToken(user) {
         return jwt.sign(user, jwtSecret);
     }
+
+    static verify(req) {
+        return this.processToken(req);
+    }
+
+    static verifyInputsNotNull(inputs) {
+        for (key in inputs) {
+            if (!inputs[key]) return false;
+        }
+        return true;
+    }
 }
 
 module.exports = Authentication;
