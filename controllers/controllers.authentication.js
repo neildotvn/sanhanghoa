@@ -1,4 +1,4 @@
-const userModel = require("../models/models.user");
+const userModel = require("../models/models.users");
 const authModel = require("../models/models.authentication");
 
 class AuthenticationController {
@@ -37,7 +37,11 @@ class AuthenticationController {
     static login(req, res) {
         userModel
             .login(req.body)
-            .then(data => res.status(200).send(data))
+            .then(user => {
+                const token = authModel.generateToken(user);
+                user.token = token;
+                res.status(200).send(user);
+            })
             .catch(err => {
                 if (err.status) {
                     res.status(err.status).send(err.message);

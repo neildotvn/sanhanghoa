@@ -2,9 +2,9 @@ const jwt = require("jsonwebtoken");
 
 const jwtSecret = "hehe";
 
-class Authentication {
+class AuthenticationModel {
     static async authenticate(req, res, next) {
-        const auth = await Authentication.processToken(req);
+        const auth = await AuthenticationModel.processToken(req);
         if (auth.payload) {
             req.auth = auth.payload;
             next();
@@ -57,4 +57,4 @@ class Authentication {
     }
 }
 
-module.exports = Authentication;
+module.exports = AuthenticationModel;

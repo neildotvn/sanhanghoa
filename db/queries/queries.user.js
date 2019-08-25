@@ -14,7 +14,7 @@ module.exports = {
     },
     getUserById: user_uid => {
         return {
-            text: "SELECT * FROM users WHERE id=$1",
+            text: "SELECT * FROM users WHERE user_uid=$1",
             values: [user_uid]
         };
     },

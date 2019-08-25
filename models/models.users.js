@@ -104,9 +104,26 @@ class User {
     }
 
     static getUserById(user_uid) {
-        return pool.connect().then(client => {
-            return client.query(userQueries.getUserById(user_uid));
-        });
+        return new Promise((resolve, reject) =>
+            pool.connect().then(client => {
+                client
+                    .query(userQueries.getUserById(user_uid))
+                    .then(data => {
+                        const user = data.rows[0];
+                        resolve({
+                            status: 200,
+                            payload: user
+                        });
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        reject({
+                            status: 406,
+                            message: "Input invalid!"
+                        });
+                    });
+            })
+        );
     }
 
     static checkExistence(phone) {

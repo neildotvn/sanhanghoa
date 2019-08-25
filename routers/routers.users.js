@@ -1,8 +1,8 @@
 const express = require("express");
-const AuthController = require("../controllers/controllers.authentication");
+const usersController = require("../controllers/controllers.users");
 
 const router = express.Router();
 
-router.get("/me", AuthController.verify);
+router.get("/me", usersController.getUserInfo);
 
 module.exports = router;
