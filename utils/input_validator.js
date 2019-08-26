@@ -4,7 +4,8 @@ module.exports = class Validator {
     static validateAuth(inputs) {
         let message;
         let isValid = true;
-        for (let key in inputs) {
+        const keys = ["phone", "password"];
+        for (let key of keys) {
             console.log(this, inputs[key]);
             if (!inputs[key]) {
                 message = `${key} must not be null!`;

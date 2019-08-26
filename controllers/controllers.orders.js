@@ -1,10 +1,9 @@
-const userModel = require("../models/models.users");
+const ordersModel = require("../models/models.orders");
 
 class UsersController {
-    static getUserInfo(req, res) {
-        console.log(req.auth);
-        userModel
-            .getUserById(req.auth.user_uid)
+    static createOrder(req, res) {
+        ordersModel
+            .createOrder(req)
             .then(data => {
                 console.log(this, data);
                 res.status(data.status).send(data.payload);

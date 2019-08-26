@@ -1,7 +1,10 @@
 const pool = require("../db/pool");
-const userQueries = require("../db/queries/queries.user");
+const userQueries = require("../db/queries/queries.users");
+const accountModel = require("../models/models.account");
 const validator = require("../utils/input_validator");
 const bcrypt = require("bcrypt");
+const { omitEmpty } = require("../utils/object_utils");
+const Error = require("../utils/custom_error");
 
 const saltRounds = 10;
 
@@ -18,44 +21,46 @@ class User {
             this.checkExistence(info.phone)
                 .then(exists => {
                     if (exists) {
-                        reject({
-                            status: 409,
-                            message: "Phone number existed!"
-                        });
+                        reject(new Error(409, "Phone number existed!"));
                     } else {
-                        resolve(
-                            pool.connect().then(client => {
-                                return bcryptHash(info.password).then(hash => {
-                                    info.password = hash;
-                                    return client.query(
-                                        userQueries.registerQuery(info)
+                        accountModel.createAccount().then(account => {
+                            resolve(
+                                pool.connect().then(client => {
+                                    return bcryptHash(info.password).then(
+                                        hash => {
+                                            info.password = hash;
+                                            info.account_uid =
+                                                account.account_uid;
+                                            return client.query(
+                                                userQueries.registerQuery(info)
+                                            );
+                                        }
                                     );
-                                });
-                            })
-                        );
+                                })
+                            );
+                        });
                     }
                 })
                 .catch(err => {
-                    reject({
-                        status: 500,
-                        message: ""
-                    });
+                    console.log(err);
+                    reject(err);
                 })
         );
     }
 
     static login(info) {
-        const validationRes = validator.validateAuth(info);
-        if (!validationRes.isValid) {
-            return Promise.reject({
-                status: 406,
-                message: validationRes.message
-            });
-        }
-        return new Promise((resolve, reject) =>
+        return new Promise((resolve, reject) => {
+            const validationRes = validator.validateAuth(info);
+            console.log(validationRes);
+            if (!validationRes.isValid) {
+                reject(new Error(406, validationRes.message));
+            }
             this.checkExistence(info.phone)
                 .then(exists => {
                     if (!exists) {
+                        const err = new Error("Phone number existed!");
+                        err.status = 409;
+                        reject(err);
                         reject({
                             status: 409,
                             message: "Phone has not been registered!"
@@ -69,7 +74,7 @@ class User {
                                     user.password
                                 ).then(
                                     isMatch => {
-                                        if (isMatch) resolve(user);
+                                        if (isMatch) resolve(omitEmpty(user));
                                         else
                                             reject({
                                                 status: 401,
@@ -89,12 +94,9 @@ class User {
                 })
                 .catch(err => {
                     console.log(this, err);
-                    reject({
-                        status: 500,
-                        message: ""
-                    });
-                })
-        );
+                    reject(err);
+                });
+        });
     }
 
     static getUserByPhoneNumber(phone) {
@@ -116,11 +118,7 @@ class User {
                         });
                     })
                     .catch(err => {
-                        console.log(err);
-                        reject({
-                            status: 406,
-                            message: "Input invalid!"
-                        });
+                        reject(err);
                     });
             })
         );
@@ -136,10 +134,7 @@ class User {
                 }),
             err => {
                 console.log("checkExistence", err);
-                return Promise.reject({
-                    status: 500,
-                    message: ""
-                });
+                return Promise.reject(err);
             }
         );
     }

@@ -8,8 +8,8 @@ module.exports = {
     registerQuery: regInfo => {
         return {
             text:
-                "INSERT INTO users(user_uid, phone, password) values (uuid_generate_v4(), $1, $2) RETURNING *",
-            values: [regInfo.phone, regInfo.password]
+                "INSERT INTO users(user_uid, phone, password, account_uid) values (uuid_generate_v4(), $1, $2, $3) RETURNING *",
+            values: [regInfo.phone, regInfo.password, regInfo.account_uid]
         };
     },
     getUserById: user_uid => {

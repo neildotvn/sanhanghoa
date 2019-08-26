@@ -5,8 +5,10 @@ const jwtSecret = "hehe";
 class AuthenticationModel {
     static async authenticate(req, res, next) {
         const auth = await AuthenticationModel.processToken(req);
+        console.log(this, auth);
+
         if (auth.payload) {
-            req.auth = auth.payload;
+            req.body.auth = auth.payload;
             next();
         } else {
             res.status(auth.status).send(auth.message);

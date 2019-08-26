@@ -26,11 +26,8 @@ class AuthenticationController {
                 res.status(200).send(user);
             })
             .catch(err => {
-                if (err.status) {
-                    res.status(err.status).send(err.message);
-                } else {
-                    console.log(err);
-                }
+                res.status(err.status).send(err.message);
+                console.log(err);
             });
     }
 
@@ -43,11 +40,8 @@ class AuthenticationController {
                 res.status(200).send(user);
             })
             .catch(err => {
-                if (err.status) {
-                    res.status(err.status).send(err.message);
-                } else {
-                    console.log(err);
-                }
+                res.status(err.status).send(err.message);
+                console.log(err);
             });
     }
 }
