@@ -1,3 +1,5 @@
+CREATE EXTENSION "uuid-ossp";
+
 create table account (
     account_uid UUID NOT NULL PRIMARY KEY,
     balance BIGINT NOT NULL DEFAULT 5000,

@@ -1,8 +1,7 @@
-require("dotenv").config();
-
 const express = require("express");
 const bodyParser = require("body-parser");
 const morgan = require("morgan");
+const config = require("./config/config");
 
 const app = express();
 
@@ -24,15 +23,16 @@ app.use((req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-    console.log(err);
-    res.status = err.status || 500;
-    res.json({
-        error: {
-            message: err.message
-        }
-    });
+    if (err) {
+        console.log("Errors Handling", err);
+        res.status(err.status || 500).json({
+            error: {
+                message: err.message
+            }
+        });
+    }
 });
 
-app.listen(process.env.PORT, () =>
-    console.log(`Server is up on port ${process.env.PORT}!`)
+app.listen(config.port, () =>
+    console.log(`Server is up on port ${config.port}!`)
 );
