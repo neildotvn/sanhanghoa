@@ -7,6 +7,7 @@ module.exports = app => {
         [AuthModel.authenticate],
         require("./routers.users")
     );
+    app.use("/api/v1/accounts", require("./routes.account"));
     app.use(
         "/api/v1/orders",
         [AuthModel.authenticate],

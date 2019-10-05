@@ -1,21 +1,16 @@
 const userModel = require("../models/models.users");
 
 class UsersController {
-    static getUserInfo(req, res) {
+    static getUserInfo(req, res, next) {
         console.log(req.auth);
         userModel
             .getUserById(req.auth.user_uid)
             .then(data => {
                 console.log(this, data);
-                res.status(data.status).send(data.payload);
+                res.status(200).send(data);
             })
             .catch(err => {
-                if (err.status) {
-                    res.status(err.status).send(err.message);
-                } else {
-                    console.log(err);
-                    res.status(500).end();
-                }
+                next(err);
             });
     }
 }

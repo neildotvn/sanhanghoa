@@ -7,7 +7,7 @@ module.exports = {
     },
     getAccountInfo: user_uid => {
         return {
-            text: "SELECT * FROM account WHERE user_uid=$1",
+            text: "SELECT * FROM account WHERE account_uid=$1",
             values: [user_uid]
         };
     }
