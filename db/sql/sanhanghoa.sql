@@ -43,6 +43,14 @@ create table alarm (
     created_at TIMESTAMPTZ NOT NULL,
     status INT NOT NULL,
     user_uid UUID REFERENCES users(user_uid)
-)
+);
+
+create table notification (
+    noti_uid UUID NOT NULL PRIMARY KEY,
+    title VARCHAR(100),
+    description VARCHAR(200),
+    deep_link VARCHAR(100),
+    user_uid UUID REFERENCES users(user_uid)
+);
 
 -- insert into account(account_uid) values(uuid_generate_v4())

@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 
 const jwtSecret = "hehe";
 
-class AuthenticationModel {
+class AuthMiddleware {
     static async authenticate(req, res, next) {
         const auth = await AuthenticationModel.processToken(req);
         console.log(this, auth);
@@ -17,12 +17,13 @@ class AuthenticationModel {
 
     static processToken(req) {
         const result = {};
-        if (!req.headers.authorization) {
+        console.log(req.headers);
+        if (!req.headers["authorization"]) {
             result.status = 401;
             result.message = "Token is empty!";
             return result;
         }
-        const splitedHeader = req.headers.authorization.split(" ");
+        const splitedHeader = req.headers["authorization"].split(" ");
         const token = splitedHeader[1];
         const type = splitedHeader[0];
         switch (type) {
@@ -59,4 +60,4 @@ class AuthenticationModel {
     }
 }
 
-module.exports = AuthenticationModel;
+module.exports = AuthMiddleware;
