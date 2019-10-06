@@ -47,8 +47,9 @@ create table alarm (
 
 create table notification (
     noti_uid UUID NOT NULL PRIMARY KEY,
-    title VARCHAR(100),
-    description VARCHAR(200),
+    status INT NOT NULL DEFAULT 0,
+    title VARCHAR(100) NOT NULL,
+    description VARCHAR(200) NOT NULL,
     deep_link VARCHAR(100),
     user_uid UUID REFERENCES users(user_uid)
 );

@@ -1,22 +1,18 @@
-const userModel = require("../models/models.users");
+const UserModel = require("../models/models.users");
 const AuthMiddleware = require("../middlewares/middlewares.authentication");
 
-const verify = (req, res) => {
-    const result = AuthMiddleware.verify(req);
-    if (!result.payload) {
-        res.status(result.status).send("Token invalid!");
-    } else {
-        res.status(result.status).send(result.payload);
-    }
-};
+// const verify = (req, res, next) => {
+//     UserModel.getUserById(req.auth.user_id)
+//         .then(user => res.status(200).user)
+//         .catch(err => next(err));
+// };
 
 const register = (req, res, next) => {
     const regInfo = {
         phone: req.body.phone,
         password: req.body.password
     };
-    userModel
-        .register(regInfo)
+    UserModel.register(regInfo)
         .then(data => {
             console.log(data);
             const user = data.rows[0];
@@ -30,8 +26,7 @@ const register = (req, res, next) => {
 };
 
 const login = (req, res, next) => {
-    userModel
-        .login(req.body)
+    UserModel.login(req.body)
         .then(user => {
             const token = AuthMiddleware.generateToken(user);
             user.token = token;
@@ -42,4 +37,4 @@ const login = (req, res, next) => {
         });
 };
 
-module.exports = { verify, register, login };
+module.exports = { register, login };

@@ -133,21 +133,70 @@ const getUserByPhoneNumber = phone => {
 
 const getUserById = user_uid => {
     return new Promise((resolve, reject) =>
-        pool.connect().then(client => {
-            client
-                .query(userQueries.getUserById(user_uid))
-                .then(data => {
-                    const user = data.rows[0];
-                    resolve({
-                        status: 200,
-                        payload: user
+        pool
+            .connect()
+            .then(client => {
+                client
+                    .query(userQueries.getUserById(user_uid))
+                    .then(data => {
+                        const user = data.rows[0];
+                        resolve(resolve(_.omit(user, "password")));
+                        client.release();
+                    })
+                    .catch(err => {
+                        client.release();
+                        reject(err);
                     });
-                })
-                .catch(err => {
-                    reject(err);
-                });
-        })
+            })
+            .catch(err => reject(err))
     );
+};
+
+const updateUserInfo = user => {
+    return new Promise((resolve, reject) => {
+        pool.connect().then(
+            client => {
+                client
+                    .query(userQueries.getUserById(user.user_uid))
+                    .then(data => {
+                        const currentUser = data.rows[0];
+                        const values = [
+                            "full_name",
+                            "address",
+                            "date_of_birth",
+                            "email",
+                            "gender",
+                            "user_uid"
+                        ];
+                        const updatingUser = _.pick(user, values);
+                        for (const key in updatingUser) {
+                            const value = updatingUser[key];
+                            if (value) currentUser[key] = value;
+                        }
+                        const updatedUserValues = _.values(
+                            _.pick(currentUser, values)
+                        );
+                        // return resolve(updatedUserValues);
+                        client
+                            .query(
+                                userQueries.updateUserInfo(updatedUserValues)
+                            )
+                            .then(
+                                data => {
+                                    console.log(data);
+                                    resolve(_.pick(currentUser, values));
+                                },
+                                err => reject(err)
+                            );
+                    })
+                    .catch(err => {
+                        reject(err);
+                    })
+                    .finally(() => client.release());
+            },
+            err => reject(err)
+        );
+    });
 };
 
 const bcryptHash = password =>
@@ -157,4 +206,4 @@ const bcryptHash = password =>
 
 const bcryptCompare = (password, hash) => bcrypt.compare(password, hash);
 
-module.exports = { register, login };
+module.exports = { register, login, getUserById, updateUserInfo };

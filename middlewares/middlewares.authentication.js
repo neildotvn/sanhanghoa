@@ -4,11 +4,11 @@ const jwtSecret = "hehe";
 
 class AuthMiddleware {
     static async authenticate(req, res, next) {
-        const auth = await AuthenticationModel.processToken(req);
+        const auth = await AuthMiddleware.processToken(req);
         console.log(this, auth);
 
         if (auth.payload) {
-            req.body.auth = auth.payload;
+            req.auth = auth.payload;
             next();
         } else {
             res.status(auth.status).send(auth.message);

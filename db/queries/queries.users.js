@@ -23,5 +23,12 @@ module.exports = {
             text: "SELECT * FROM users WHERE phone=$1",
             values: [phone]
         };
+    },
+    updateUserInfo: values => {
+        return {
+            text:
+                "UPDATE users SET full_name=$1, address=$2, date_of_birth=$3, email=$4, gender=$5 WHERE user_uid=$6",
+            values
+        };
     }
 };
