@@ -1,45 +1,79 @@
 const pool = require("../db/pool");
 const ordersQueries = require("../db/queries/queries.orders");
-const { omitEmpty } = require("../utils/object_utils");
+const _ = require("lodash");
 
-module.exports = class Orders {
-    static get orderField() {
-        return [
-            "exchange",
-            "order_type",
-            "volume",
-            "placing_price",
-            "take_profit_price",
-            "stop_loss_price",
-            "account_uid"
-        ];
-    }
+const orderFields = () => {
+    return [
+        "exchange",
+        "order_type",
+        "order_status",
+        "volume",
+        "placing_price",
+        "take_profit_price",
+        "stop_loss_price"
+    ];
+};
 
-    static createOrder(req) {
-        const orderInfo = this.orderField.map(value => {
-            if (value === "account_uid") return req.body.auth.account_uid;
-            return req.body[value];
-        });
+const getOrdersByAccountId = req => {
+    return new Promise((resolve, reject) => {
+        pool.connect()
+            .then(client => {
+                client
+                    .query(
+                        ordersQueries.getOrdersByAccountId(req.auth.account_uid)
+                    )
+                    .then(
+                        data => {
+                            const orders = data.rows;
+                            resolve(
+                                orders.map(order => _.omitBy(order, _.isNull))
+                            );
+                        },
+                        err => {
+                            reject(err);
+                        }
+                    )
+                    .finally(() => client.release());
+            })
+            .catch(err => reject(err));
+    });
+};
 
-        return new Promise((resolve, reject) => {
-            pool.connect().then(client => {
-                client.query(ordersQueries.createOrder(orderInfo)).then(
-                    data => {
-                        const order = data.rows[0];
-                        resolve({
-                            status: 200,
-                            payload: omitEmpty(order)
-                        });
-                    },
-                    err => {
-                        reject(err);
-                    }
-                );
+const createOrder = req => {
+    const orderInfo = _.values(_.pick(req.body, orderFields()));
+    orderInfo.push(req.auth.account_uid);
+
+    return new Promise((resolve, reject) => {
+        pool.connect()
+            .then(client => {
+                client
+                    .query(ordersQueries.createOrder(orderInfo))
+                    .then(
+                        data => {
+                            const order = data.rows[0];
+                            resolve(_.omitBy(order, _.isNull));
+                        },
+                        err => {
+                            console.log(err);
+                            reject(err);
+                        }
+                    )
+                    .finally(() => client.release());
+            })
+            .catch(err => {
+                console.log(err);
+                reject(err);
             });
-        });
-    }
+    });
+};
 
-    static updateOrder(req) {
-        const body = req.body;
-    }
+const updateOrder = req => {
+    const body = req.body;
+};
+
+module.exports = {
+    orderField: orderFields,
+    createOrder,
+    updateOrder,
+    getOrdersByAccountId
 };

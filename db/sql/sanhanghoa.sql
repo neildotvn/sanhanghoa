@@ -24,7 +24,8 @@ create table users (
 create table orders (
     order_uid UUID NOT NULL PRIMARY KEY,
     exchange CHAR(3) NOT NULL,
-    order_type INT NOT NULL,
+    order_type INT NOT NULL, /* 0 for buy, 1 for sell, 2 for buy limit, 3 for sell limit, 4 for buy stop, 5 for sell stop */
+    order_status INT NOT NULL, /* 0 for active, 1 for inactive */
     volume FLOAT8 NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP(2),
     closed_at TIMESTAMPTZ,

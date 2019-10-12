@@ -184,7 +184,7 @@ const updateUserInfo = user => {
                             .then(
                                 data => {
                                     console.log(data);
-                                    resolve(_.pick(currentUser, values));
+                                    resolve(_.omit(currentUser, ["password"]));
                                 },
                                 err => reject(err)
                             );
