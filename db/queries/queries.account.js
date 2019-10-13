@@ -5,10 +5,10 @@ module.exports = {
                 "INSERT INTO account(account_uid) values (uuid_generate_v4()) RETURNING *"
         };
     },
-    getAccountInfo: user_uid => {
+    getAccountInfoByAccountId: account_uid => {
         return {
             text: "SELECT * FROM account WHERE account_uid=$1",
-            values: [user_uid]
+            values: [account_uid]
         };
     }
 };

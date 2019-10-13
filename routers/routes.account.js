@@ -1,8 +1,8 @@
 const express = require("express");
-const AccountController = require("../controllers/controllers.account");
+const { getAccountInfo } = require("../controllers/controllers.account");
 
 const router = express.Router();
 
-router.get("/:user_uid", AccountController.getAccountInfoByUserId);
+router.get("/", getAccountInfo);
 
 module.exports = router;

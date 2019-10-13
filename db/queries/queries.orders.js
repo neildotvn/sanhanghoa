@@ -1,9 +1,17 @@
 const _ = require("lodash");
 
 module.exports = {
-    getOrdersByAccountId: account_uid => {
+    getActiveOrdersByAccountId: account_uid => {
         return {
-            text: "SELECT * FROM orders WHERE account_uid=$1",
+            text:
+                "SELECT * FROM orders WHERE account_uid=$1 AND order_status=0",
+            values: [account_uid]
+        };
+    },
+    getOrderHistoryByAccountId: account_uid => {
+        return {
+            text:
+                "SELECT * FROM orders WHERE account_uid=$1 AND order_status=1",
             values: [account_uid]
         };
     },

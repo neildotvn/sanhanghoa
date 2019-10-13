@@ -14,13 +14,42 @@ const orderFields = () => {
     ];
 };
 
-const getOrdersByAccountId = req => {
+const getActiveOrdersByAccountId = req => {
     return new Promise((resolve, reject) => {
         pool.connect()
             .then(client => {
                 client
                     .query(
-                        ordersQueries.getOrdersByAccountId(req.auth.account_uid)
+                        ordersQueries.getActiveOrdersByAccountId(
+                            req.auth.account_uid
+                        )
+                    )
+                    .then(
+                        data => {
+                            const orders = data.rows;
+                            resolve(
+                                orders.map(order => _.omitBy(order, _.isNull))
+                            );
+                        },
+                        err => {
+                            reject(err);
+                        }
+                    )
+                    .finally(() => client.release());
+            })
+            .catch(err => reject(err));
+    });
+};
+
+const getOrderHistoryByAccountId = req => {
+    return new Promise((resolve, reject) => {
+        pool.connect()
+            .then(client => {
+                client
+                    .query(
+                        ordersQueries.getOrderHistoryByAccountId(
+                            req.auth.account_uid
+                        )
                     )
                     .then(
                         data => {
@@ -75,5 +104,6 @@ module.exports = {
     orderField: orderFields,
     createOrder,
     updateOrder,
-    getOrdersByAccountId
+    getActiveOrdersByAccountId,
+    getOrderHistoryByAccountId
 };

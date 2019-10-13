@@ -22,6 +22,25 @@ const createAccount = () => {
     });
 };
 
+const getAccountInfoByAccountId = account_uid => {
+    return new Promise((resolve, reject) => {
+        pool.connect().then(client => {
+            client
+                .query(accountQueries.getAccountInfoByAccountId(account_uid))
+                .then(
+                    data => {
+                        const account = data.rows[0];
+                        resolve(account);
+                    },
+                    err => {
+                        reject(err);
+                    }
+                )
+                .finally(() => client.release());
+        });
+    });
+};
+
 const getAccountInfoByUserId = user_uid => {
     return new Promise((resolve, reject) => {
         pool.connect().then(
@@ -35,14 +54,14 @@ const getAccountInfoByUserId = user_uid => {
                                 accountQueries.getAccountInfo(user.account_uid)
                             )
                             .then(data => {
+                                client.release();
                                 const account = data.rows[0];
                                 resolve(account);
-                                client.release();
                             });
                     })
                     .catch(err => {
-                        reject(new Error(406, "Wrong input"));
                         client.release();
+                        reject(new Error(406, "Wrong input"));
                         console.log(this, err);
                     });
             },
@@ -54,4 +73,4 @@ const getAccountInfoByUserId = user_uid => {
     });
 };
 
-module.exports = { createAccount, getAccountInfoByUserId };
+module.exports = { createAccount, getAccountInfoByAccountId };

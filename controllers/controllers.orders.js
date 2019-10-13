@@ -13,9 +13,9 @@ const createOrder = (req, res, next) => {
         });
 };
 
-const getOrdersByAccountId = (req, res, next) => {
+const getActiveOrdersByAccountId = (req, res, next) => {
     ordersModel
-        .getOrdersByAccountId(req)
+        .getActiveOrdersByAccountId(req)
         .then(data => {
             console.log(this, data);
             res.status(200).send(data);
@@ -26,4 +26,21 @@ const getOrdersByAccountId = (req, res, next) => {
         });
 };
 
-module.exports = { createOrder, getOrdersByAccountId };
+const getOrderHistoryByAccountId = (req, res, next) => {
+    ordersModel
+        .getOrderHistoryByAccountId(req)
+        .then(data => {
+            console.log(this, data);
+            res.status(200).send(data);
+        })
+        .catch(err => {
+            console.log(err);
+            next(err);
+        });
+};
+
+module.exports = {
+    createOrder,
+    getActiveOrdersByAccountId,
+    getOrderHistoryByAccountId
+};

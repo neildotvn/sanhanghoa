@@ -5,6 +5,7 @@ const router = express.Router();
 
 router
     .post("/", controller.createOrder)
-    .get("/", controller.getOrdersByAccountId);
+    .get("/active", controller.getActiveOrdersByAccountId)
+    .get("/history", controller.getOrderHistoryByAccountId);
 
 module.exports = router;
