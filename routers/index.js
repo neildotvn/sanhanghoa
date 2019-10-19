@@ -22,4 +22,9 @@ module.exports = app => {
         [AuthMiddleware.authenticate],
         require("./routers.notification")
     );
+    app.use(
+        "/api/v1/prices",
+        [AuthMiddleware.authenticate],
+        require("./routers.prices")
+    );
 };
