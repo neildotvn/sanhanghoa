@@ -1,4 +1,5 @@
 const ordersModel = require("../models/models.orders");
+const accountModel = require("../models/models.account");
 
 const createOrder = (req, res, next) => {
     ordersModel
@@ -11,6 +12,20 @@ const createOrder = (req, res, next) => {
             console.log(err);
             next(err);
         });
+};
+
+const closeOrder = (req, res, next) => {
+    accountModel
+        .getAccountInfoByAccountId(req.auth.account_uid)
+        .then(account => {
+            // ordersModel.getOrderById(req.body.order_uid).then(order => {
+            // res.status(200).send(order);
+            // });
+            ordersModel
+                .closeOrder(req.body.order_uid)
+                .then(response => res.status(200).send(response));
+        })
+        .catch(err => next(err));
 };
 
 const getActiveOrdersByAccountId = (req, res, next) => {
@@ -41,6 +56,7 @@ const getOrderHistoryByAccountId = (req, res, next) => {
 
 module.exports = {
     createOrder,
+    closeOrder,
     getActiveOrdersByAccountId,
     getOrderHistoryByAccountId
 };

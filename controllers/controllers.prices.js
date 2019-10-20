@@ -1,7 +1,10 @@
-const prices = require("../models/models.prices");
+const model = require("../models/models.prices");
 
 const getAllPrices = (req, res, next) => {
-    res.status(200).send(prices);
+    model
+        .getAllPrices()
+        .then(result => res.status(200).send(result))
+        .catch(err => next(err));
 };
 
 module.exports = { getAllPrices };

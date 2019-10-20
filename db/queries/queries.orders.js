@@ -18,8 +18,20 @@ module.exports = {
     createOrder: values => {
         return {
             text:
-                "INSERT INTO orders (order_uid, created_at, exchange, order_type, order_status, volume, placing_price, take_profit_price, stop_loss_price, account_uid) values (uuid_generate_v4(), NOW(), $1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
+                "INSERT INTO orders (order_uid, created_at, product, exchange, order_type, order_status, volume, placing_price, take_profit_price, stop_loss_price, account_uid) values (uuid_generate_v4(), NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
             values
+        };
+    },
+    getOrderById: order_uid => {
+        return {
+            text: "SELECT * FROM orders WHERE order_uid=$1",
+            values: [order_uid]
+        };
+    },
+    deleteOrderById: order_uid => {
+        return {
+            text: "DELETE FROM orders WHERE order_uid=$1",
+            values: [order_uid]
         };
     }
 };

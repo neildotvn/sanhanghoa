@@ -23,8 +23,8 @@ create table users (
 
 create table orders (
     order_uid UUID NOT NULL PRIMARY KEY,
-    exchange CHAR(3) NOT NULL,
-    product CHAR(20) NOT NULL,
+    exchange CHAR(10) NOT NULL,
+    product INT NOT NULL,
     order_type INT NOT NULL, /* 0 for buy, 1 for sell, 2 for buy limit, 3 for sell limit, 4 for buy stop, 5 for sell stop */
     order_status INT NOT NULL, /* 0 for active, 1 for inactive */
     volume FLOAT8 NOT NULL,
@@ -37,6 +37,29 @@ create table orders (
     result BIGINT,
     account_uid UUID REFERENCES account(account_uid) NOT NULL
 );
+    -- 0: "KHÔ ĐẬU TƯƠNG",
+    -- 1: "DẦU ĐẬU TƯƠNG",
+    -- 2: "LÚA MÌ",
+    -- 3: "ĐẬU TƯƠNG",
+    -- 4: "NGÔ",
+    -- 5: "CÀ PHÊ",
+    -- 6: "CÀ PHÊ ROBUSTA",
+    -- 7: "CÀ PHÊ ARABICA",
+    -- 8: "ĐƯỜNG",
+    -- 9: "BÔNG",
+    -- 10: "CAO SU",
+    -- 11: "CA CAO",
+    -- 12: "TIÊU",
+    -- 13: "QUẶNG SẮT",
+    -- 14: "BẠCH KIM",
+    -- 15: "BẠC",
+    -- 16: "ĐỒNG",
+    -- 17: "DẦU WTI MINI",
+    -- 18: "DẦU ÍT LƯU HUỲNH",
+    -- 19: "XĂNG PHA CHẾ",
+    -- 20: "KHÍ TỰ NHIÊN",
+    -- 21: "DẦU THÔ",
+    -- 22: "DẦU THÔ BRENT"
 
 create table alarm (
     alarm_uid UUID NOT NULL PRIMARY KEY,

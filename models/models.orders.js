@@ -4,6 +4,7 @@ const _ = require("lodash");
 
 const orderFields = () => {
     return [
+        "product",
         "exchange",
         "order_type",
         "order_status",
@@ -96,14 +97,65 @@ const createOrder = req => {
     });
 };
 
-const updateOrder = req => {
-    const body = req.body;
+const getOrderById = order_uid => {
+    return new Promise((resolve, reject) => {
+        pool.connect()
+            .then(client => {
+                client
+                    .query(ordersQueries.getOrderById(order_uid))
+                    .then(
+                        data => {
+                            const order = data.rows[0];
+                            resolve(order);
+                        },
+                        err => {
+                            console.log(err);
+                            reject(err);
+                        }
+                    )
+                    .finally(() => client.release());
+            })
+            .catch(err => {
+                console.log(err);
+                reject(err);
+            });
+    });
 };
+
+const closeOrder = order_uid => {
+    return new Promise((resolve, reject) => {
+        pool.connect()
+            .then(client => {
+                client
+                    .query(ordersQueries.deleteOrderById(order_uid))
+                    .then(
+                        data => {
+                            resolve("success");
+                        },
+                        err => {
+                            console.log(err);
+                            reject(err);
+                        }
+                    )
+                    .finally(() => client.release());
+            })
+            .catch(err => {
+                console.log(err);
+                reject(err);
+            });
+    });
+};
+
+// const updateOrder = req => {
+//     const body = req.body;
+// };
 
 module.exports = {
     orderField: orderFields,
     createOrder,
-    updateOrder,
+    closeOrder,
+    // updateOrder,
+    getOrderById,
     getActiveOrdersByAccountId,
     getOrderHistoryByAccountId
 };
