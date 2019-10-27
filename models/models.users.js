@@ -1,4 +1,4 @@
-const pool = require("../db/pool");
+const { pool } = require("../db/pool");
 const userQueries = require("../db/queries/queries.users");
 const accountModel = require("../models/models.account");
 const validator = require("../utils/input_validator");

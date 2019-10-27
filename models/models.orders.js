@@ -1,4 +1,4 @@
-const pool = require("../db/pool");
+const { pool } = require("../db/pool");
 const Redis = require("ioredis");
 const redis = new Redis();
 const sub = new Redis();

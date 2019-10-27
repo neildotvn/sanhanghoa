@@ -1,4 +1,4 @@
-const pool = require("../db/pool");
+const { pool } = require("../db/pool");
 const notiQueries = require("../db/queries/queries.notification");
 const Error = require("../utils/custom_error");
 

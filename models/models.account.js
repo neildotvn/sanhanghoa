@@ -1,4 +1,4 @@
-const pool = require("../db/pool");
+const { pool } = require("../db/pool");
 const accountQueries = require("../db/queries/queries.account");
 const userQueries = require("../db/queries/queries.users");
 const Error = require("../utils/custom_error");
