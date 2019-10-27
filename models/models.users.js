@@ -139,9 +139,14 @@ const getUserById = user_uid => {
                 client
                     .query(userQueries.getUserById(user_uid))
                     .then(data => {
-                        const user = data.rows[0];
-                        resolve(resolve(_.omit(user, "password")));
+                        console.log(data.rows.length);
                         client.release();
+                        if (data.rows.length === 0) {
+                            reject(new Error(400, "This user doesn't exist!"));
+                        } else {
+                            const user = data.rows[0];
+                            resolve(_.omit(user, "password"));
+                        }
                     })
                     .catch(err => {
                         client.release();

@@ -1,5 +1,9 @@
 const pool = require("../db/pool");
+const Redis = require("ioredis");
+const redis = new Redis();
+const sub = new Redis();
 const ordersQueries = require("../db/queries/queries.orders");
+const accountQueries = require("../db/queries/queries.account");
 const _ = require("lodash");
 
 const orderFields = () => {
@@ -13,6 +17,26 @@ const orderFields = () => {
         "take_profit_price",
         "stop_loss_price"
     ];
+};
+
+const getAllActiveOrders = () => {
+    return new Promise((resolve, reject) => {
+        pool.connect()
+            .then(client => {
+                client
+                    .query("SELECT * FROM orders WHERE order_status=0")
+                    .then(
+                        data => {
+                            resolve(data.rows);
+                        },
+                        err => {
+                            reject(err);
+                        }
+                    )
+                    .finally(() => client.release());
+            })
+            .catch(err => reject(err));
+    });
 };
 
 const getActiveOrdersByAccountId = req => {
@@ -127,10 +151,36 @@ const closeOrder = order_uid => {
         pool.connect()
             .then(client => {
                 client
-                    .query(ordersQueries.deleteOrderById(order_uid))
+                    .query(ordersQueries.getOrderById(order_uid))
                     .then(
-                        data => {
-                            resolve("success");
+                        orderResult => {
+                            const order = orderResult.rows[0];
+                            redis.get("prices").then(
+                                prices => {
+                                    const closingPrice = getRowDataWithProductAndExchange(
+                                        JSON.parse(prices),
+                                        order.product,
+                                        order.exchange
+                                    )[1];
+                                    client
+                                        .query(
+                                            ordersQueries.closeOrderById(
+                                                order_uid,
+                                                closingPrice
+                                            )
+                                        )
+                                        .then(
+                                            data => {
+                                                resolve("success");
+                                            },
+                                            err => {
+                                                console.log(err);
+                                                reject(err);
+                                            }
+                                        );
+                                },
+                                err => console.log(err)
+                            );
                         },
                         err => {
                             console.log(err);
@@ -146,9 +196,56 @@ const closeOrder = order_uid => {
     });
 };
 
-// const updateOrder = req => {
-//     const body = req.body;
-// };
+const processOrdersWhenPricesUpdated = prices => {
+    // return new Promise((resolve, reject) => {
+    //     pool.connect()
+    //         .then(client => {
+    //             client
+    //                 .query("SELECT * FROM orders WHERE order_status=0")
+    //                 .then(
+    //                     data => {
+    //                         // resolve(data.rows);
+    //                         const orders = data.rows;
+    //                         for (order of orders) {
+    //                         }
+    //                     },
+    //                     err => {
+    //                         reject(err);
+    //                     }
+    //                 )
+    //                 .finally(() => client.release());
+    //         })
+    //         .catch(err => reject(err));
+    // });
+};
+
+sub.subscribe("prices", function(err, count) {});
+
+sub.on("message", (channel, message) => {
+    console.log(
+        `Received a message from channel ${channel} with message = ${message}`
+    );
+    redis
+        .get("prices")
+        .then(prices => {
+            // processOrdersWhenPricesUpdated(prices);
+            // prices = result;
+            // Query the orders table to check the data to process
+            // console.log(result);
+        })
+        .catch(err => console.log(err));
+});
+
+const getRowDataWithProductAndExchange = (prices, product, exchange) => {
+    const data = prices[product];
+    const trimmed = exchange.replace(/\s/g, "");
+    const exchangeName = trimmed.substring(0, 3).toLowerCase();
+    const term = trimmed.substring(3);
+    return data[exchangeName].filter(row => row[0] === term)[0];
+};
+
+const calculateFinalValue = (placing_price, closing_price, volume) =>
+    (closing_price - placing_price) * (volume * 100000);
 
 module.exports = {
     orderField: orderFields,

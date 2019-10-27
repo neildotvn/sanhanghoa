@@ -5,7 +5,6 @@ class UsersController {
         userModel
             .getUserById(req.auth.user_uid)
             .then(data => {
-                console.log(this, data);
                 res.status(200).send(data);
             })
             .catch(err => {

@@ -23,8 +23,8 @@ create table users (
 
 create table orders (
     order_uid UUID NOT NULL PRIMARY KEY,
-    exchange CHAR(10) NOT NULL,
-    product INT NOT NULL,
+    exchange VARCHAR(10) NOT NULL,
+    product VARCHAR(20) NOT NULL,
     order_type INT NOT NULL, /* 0 for buy, 1 for sell, 2 for buy limit, 3 for sell limit, 4 for buy stop, 5 for sell stop */
     order_status INT NOT NULL, /* 0 for active, 1 for inactive */
     volume FLOAT8 NOT NULL,
@@ -42,13 +42,13 @@ create table orders (
     -- 2: "LÚA MÌ",
     -- 3: "ĐẬU TƯƠNG",
     -- 4: "NGÔ",
-    -- 5: "CÀ PHÊ",
-    -- 6: "CÀ PHÊ ROBUSTA",
-    -- 7: "CÀ PHÊ ARABICA",
+    -- 5: "CÀ PHÊ" - coffee
+    -- 6: "CÀ PHÊ ROBUSTA" - robuta
+    -- 7: "CÀ PHÊ ARABICA" - arabica
     -- 8: "ĐƯỜNG",
-    -- 9: "BÔNG",
-    -- 10: "CAO SU",
-    -- 11: "CA CAO",
+    -- 9: "BÔNG" - cotton
+    -- 10: "CAO SU" - rubber
+    -- 11: "CA CAO" - cocoa
     -- 12: "TIÊU",
     -- 13: "QUẶNG SẮT",
     -- 14: "BẠCH KIM",
