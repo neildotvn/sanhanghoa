@@ -31,6 +31,7 @@
         "validator": "^11.1.0"
     },
     "prettier": {
-        "tabWidth": 4
+        "tabWidth": 4,
+        "printWidth": 120
     }
 }

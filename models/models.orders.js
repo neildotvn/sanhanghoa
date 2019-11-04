@@ -3,7 +3,7 @@ const Redis = require("ioredis");
 const redis = new Redis();
 const sub = new Redis();
 const ordersQueries = require("../db/queries/queries.orders");
-const accountQueries = require("../db/queries/queries.account");
+const accountModel = require("../models/models.account");
 const _ = require("lodash");
 
 const orderFields = () => {
@@ -17,6 +17,23 @@ const orderFields = () => {
         "take_profit_price",
         "stop_loss_price"
     ];
+};
+
+const leverageValues = {
+    // platinum: 50,
+    // natural_gas: 10000,
+    rubber: 50,
+    // silver: 5000,
+    cocoa: 10,
+    // mini_corn: 10,
+    // copper: 25000,
+    cotton: 500,
+    // sugar: 1120,
+    // wheat: 50,
+    // soybeans: 50,
+    // corn: 50,
+    robusta: 10,
+    arabica: 375
 };
 
 const getAllActiveOrders = () => {
@@ -44,17 +61,11 @@ const getActiveOrdersByAccountId = req => {
         pool.connect()
             .then(client => {
                 client
-                    .query(
-                        ordersQueries.getActiveOrdersByAccountId(
-                            req.auth.account_uid
-                        )
-                    )
+                    .query(ordersQueries.getActiveOrdersByAccountId(req.auth.account_uid))
                     .then(
                         data => {
                             const orders = data.rows;
-                            resolve(
-                                orders.map(order => _.omitBy(order, _.isNull))
-                            );
+                            resolve(orders.map(order => _.omitBy(order, _.isNull)));
                         },
                         err => {
                             reject(err);
@@ -71,17 +82,11 @@ const getOrderHistoryByAccountId = req => {
         pool.connect()
             .then(client => {
                 client
-                    .query(
-                        ordersQueries.getOrderHistoryByAccountId(
-                            req.auth.account_uid
-                        )
-                    )
+                    .query(ordersQueries.getOrderHistoryByAccountId(req.auth.account_uid))
                     .then(
                         data => {
                             const orders = data.rows;
-                            resolve(
-                                orders.map(order => _.omitBy(order, _.isNull))
-                            );
+                            resolve(orders.map(order => _.omitBy(order, _.isNull)));
                         },
                         err => {
                             reject(err);
@@ -162,22 +167,26 @@ const closeOrder = order_uid => {
                                         order.product,
                                         order.exchange
                                     )[1];
-                                    client
-                                        .query(
-                                            ordersQueries.closeOrderById(
-                                                order_uid,
-                                                closingPrice
-                                            )
-                                        )
-                                        .then(
-                                            data => {
-                                                resolve("success");
-                                            },
-                                            err => {
-                                                console.log(err);
-                                                reject(err);
+                                    client.query(ordersQueries.closeOrderById(order_uid, closingPrice)).then(
+                                        data => {
+                                            resolve("success");
+                                            let value = 0;
+                                            if (
+                                                order.order_type === 0 ||
+                                                order.order_type === 2 ||
+                                                order.order_type === 4
+                                            ) {
+                                                value = order.volume * (closingPrice - order.placing_price);
+                                            } else {
+                                                value = order.volume * (order.placing_price - closingPrice);
                                             }
-                                        );
+                                            accountModel.updateAccountByChange(order.account_uid, value);
+                                        },
+                                        err => {
+                                            console.log(err);
+                                            reject(err);
+                                        }
+                                    );
                                 },
                                 err => console.log(err)
                             );
@@ -196,42 +205,170 @@ const closeOrder = order_uid => {
     });
 };
 
+const activateOrder = order_uid => {
+    pool.connect()
+        .then(client => {
+            client
+                .query(ordersQueries.activateOrder(order_uid))
+                .then(
+                    result => {
+                        console.log("Order activated!");
+                    },
+                    err => {
+                        console.log("Order activation failed!", err);
+                        reject(err);
+                    }
+                )
+                .finally(() => client.release());
+        })
+        .catch(err => {
+            console.log(err);
+            reject(err);
+        });
+};
+
 const processOrdersWhenPricesUpdated = prices => {
-    // return new Promise((resolve, reject) => {
-    //     pool.connect()
-    //         .then(client => {
-    //             client
-    //                 .query("SELECT * FROM orders WHERE order_status=0")
-    //                 .then(
-    //                     data => {
-    //                         // resolve(data.rows);
-    //                         const orders = data.rows;
-    //                         for (order of orders) {
-    //                         }
-    //                     },
-    //                     err => {
-    //                         reject(err);
-    //                     }
-    //                 )
-    //                 .finally(() => client.release());
-    //         })
-    //         .catch(err => reject(err));
-    // });
+    pool.connect()
+        .then(client => {
+            client
+                .query("SELECT * FROM orders WHERE order_status=0")
+                .then(
+                    data => {
+                        const orders = data.rows;
+                        for (order of orders) {
+                            try {
+                                const rows = prices[order.product];
+                                const filteredProduct = rows.filter(row => row[0] === order.exchange)[0];
+                                if (filteredProduct) {
+                                    const tradingPrice = filteredProduct[1];
+                                    switch (order.order_type) {
+                                        case 0: // buy
+                                            if (
+                                                order.take_profit_price != null &&
+                                                tradingPrice > order.take_profit_price
+                                            ) {
+                                                closeOrder(order.order_uid);
+                                            } else if (
+                                                order.stop_loss_price != null &&
+                                                tradingPrice < order.stop_loss_price
+                                            ) {
+                                                closeOrder(order.order_uid);
+                                            }
+                                            break;
+                                        case 1: // sell
+                                            if (
+                                                order.take_profit_price != null &&
+                                                tradingPrice < order.take_profit_price
+                                            ) {
+                                                closeOrder(order.order_uid);
+                                            } else if (
+                                                order.stop_loss_price != null &&
+                                                tradingPrice > order.stop_loss_price
+                                            ) {
+                                                closeOrder(order.order_uid);
+                                            }
+                                            break;
+                                        case 2: // buy limit
+                                            if (order.order_status === 1) {
+                                                if (tradingPrice < order.placing_price) {
+                                                    activateOrder(order.order_uid);
+                                                }
+                                            } else {
+                                                if (
+                                                    order.take_profit_price != null &&
+                                                    tradingPrice > order.take_profit_price
+                                                ) {
+                                                    closeOrder(order.order_uid);
+                                                } else if (
+                                                    order.stop_loss_price != null &&
+                                                    tradingPrice < order.stop_loss_price
+                                                ) {
+                                                    closeOrder(order.order_uid);
+                                                }
+                                            }
+                                            break;
+                                        case 3: // sell limit
+                                            if (order.order_status === 1) {
+                                                if (tradingPrice > order.placing_price) {
+                                                    activateOrder(order.order_uid);
+                                                }
+                                            } else {
+                                                if (
+                                                    order.take_profit_price != null &&
+                                                    tradingPrice < order.take_profit_price
+                                                ) {
+                                                    closeOrder(order.order_uid);
+                                                } else if (
+                                                    order.stop_loss_price != null &&
+                                                    tradingPrice > order.stop_loss_price
+                                                ) {
+                                                    closeOrder(order.order_uid);
+                                                }
+                                            }
+                                            break;
+                                        case 4: // buy stop
+                                            if (order.order_status === 1) {
+                                                if (tradingPrice > order.placing_price) {
+                                                    activateOrder(order.order_uid);
+                                                }
+                                            } else {
+                                                if (
+                                                    order.take_profit_price != null &&
+                                                    tradingPrice > order.take_profit_price
+                                                ) {
+                                                    closeOrder(order.order_uid);
+                                                } else if (
+                                                    order.stop_loss_price != null &&
+                                                    tradingPrice < order.stop_loss_price
+                                                ) {
+                                                    closeOrder(order.order_uid);
+                                                }
+                                                break;
+                                            }
+                                            break;
+                                        case 5: // sell stop
+                                            if (order.order_status === 1) {
+                                                if (tradingPrice < order.placing_price) {
+                                                    activateOrder(order.order_uid);
+                                                }
+                                            } else {
+                                                if (
+                                                    order.take_profit_price != null &&
+                                                    tradingPrice < order.take_profit_price
+                                                ) {
+                                                    closeOrder(order.order_uid);
+                                                } else if (
+                                                    order.stop_loss_price != null &&
+                                                    tradingPrice > order.stop_loss_price
+                                                ) {
+                                                    closeOrder(order.order_uid);
+                                                }
+                                            }
+                                            break;
+                                    }
+                                }
+                            } catch (e) {
+                                console.log(e);
+                            }
+                        }
+                    },
+                    err => {
+                        console.log(e);
+                    }
+                )
+                .finally(() => client.release());
+        })
+        .catch(err => console.log(e));
 };
 
 sub.subscribe("prices", function(err, count) {});
 
 sub.on("message", (channel, message) => {
-    console.log(
-        `Received a message from channel ${channel} with message = ${message}`
-    );
+    console.log(`Received a message from channel ${channel} with message = ${message}`);
     redis
         .get("prices")
         .then(prices => {
-            // processOrdersWhenPricesUpdated(prices);
-            // prices = result;
-            // Query the orders table to check the data to process
-            // console.log(result);
+            processOrdersWhenPricesUpdated(prices);
         })
         .catch(err => console.log(err));
 });

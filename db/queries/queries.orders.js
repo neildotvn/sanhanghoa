@@ -40,5 +40,11 @@ module.exports = {
                 "UPDATE orders SET order_status=1, closing_price=$2 WHERE order_uid=$1",
             values: [order_uid, closing_price]
         };
+    },
+    activateOrder: order_uid => {
+        return {
+            text: "UPDATE orders SET order_status=0 WHERE order_uid=$1",
+            values: [order_uid]
+        }
     }
 };

@@ -49,15 +49,11 @@ const getAccountInfoByUserId = user_uid => {
                     .query(userQueries.getUserById(user_uid))
                     .then(data => {
                         const user = data.rows[0];
-                        client
-                            .query(
-                                accountQueries.getAccountInfo(user.account_uid)
-                            )
-                            .then(data => {
-                                client.release();
-                                const account = data.rows[0];
-                                resolve(account);
-                            });
+                        client.query(accountQueries.getAccountInfo(user.account_uid)).then(data => {
+                            client.release();
+                            const account = data.rows[0];
+                            resolve(account);
+                        });
                     })
                     .catch(err => {
                         client.release();
@@ -73,4 +69,30 @@ const getAccountInfoByUserId = user_uid => {
     });
 };
 
-module.exports = { createAccount, getAccountInfoByAccountId };
+const updateAccountByChange = (account_uid, change) => {
+    return new Promise((resolve, reject) => {
+        getAccountInfoByAccountId(account_uid).then(
+            account => {
+                const newBalance = account.balance + change;
+                pool.connect().then(client => {
+                    client
+                        .query(accountQueries.updateAccount(account_uid, newBalance))
+                        .then(
+                            data => {
+                                resolve("Account updated successfully!");
+                            },
+                            err => {
+                                reject(err);
+                            }
+                        )
+                        .finally(() => client.release());
+                });
+            },
+            err => {
+                reject(err);
+            }
+        );
+    });
+};
+
+module.exports = { createAccount, getAccountInfoByAccountId, updateAccountByChange };

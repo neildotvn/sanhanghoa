@@ -89,7 +89,6 @@ const login = info => {
             checkExistence(info.phone)
                 .then(exists => {
                     if (!exists) {
-                        const err = (err.status = 409);
                         reject(new Error(409, "Account has not been created!"));
                     } else {
                         console.log("exists = " + exists);
