@@ -27,4 +27,8 @@ module.exports = app => {
         [AuthMiddleware.authenticate],
         require("./routers.prices")
     );
+    app.use(
+        "/tincaphe-token",
+        require("./routers.tincaphe")
+    )
 };
