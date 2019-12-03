@@ -3,15 +3,13 @@ const _ = require("lodash");
 module.exports = {
     getActiveOrdersByAccountId: account_uid => {
         return {
-            text:
-                "SELECT * FROM orders WHERE account_uid=$1 AND order_status=0",
+            text: "SELECT * FROM orders WHERE account_uid=$1 AND order_status=0 OR order_status=1",
             values: [account_uid]
         };
     },
     getOrderHistoryByAccountId: account_uid => {
         return {
-            text:
-                "SELECT * FROM orders WHERE account_uid=$1 AND order_status=1",
+            text: "SELECT * FROM orders WHERE account_uid=$1 AND order_status=2",
             values: [account_uid]
         };
     },
@@ -36,8 +34,7 @@ module.exports = {
     },
     closeOrderById: (order_uid, closing_price) => {
         return {
-            text:
-                "UPDATE orders SET order_status=1, closing_price=$2 WHERE order_uid=$1",
+            text: "UPDATE orders SET order_status=2, closing_price=$2 WHERE order_uid=$1",
             values: [order_uid, closing_price]
         };
     },
@@ -45,6 +42,6 @@ module.exports = {
         return {
             text: "UPDATE orders SET order_status=0 WHERE order_uid=$1",
             values: [order_uid]
-        }
+        };
     }
 };

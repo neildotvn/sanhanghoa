@@ -26,7 +26,7 @@ create table orders (
     exchange VARCHAR(10) NOT NULL,
     product VARCHAR(20) NOT NULL,
     order_type INT NOT NULL, /* 0 for buy, 1 for sell, 2 for buy limit, 3 for sell limit, 4 for buy stop, 5 for sell stop */
-    order_status INT NOT NULL, /* 0 for active, 1 for inactive */
+    order_status INT NOT NULL, /* 0 for active, 1 for inactive, 2 for closed*/
     volume FLOAT8 NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP(2),
     closed_at TIMESTAMPTZ,
@@ -63,10 +63,13 @@ create table orders (
 
 create table alarm (
     alarm_uid UUID NOT NULL PRIMARY KEY,
-    alarm_type INT NOT NULL,
+    product VARCHAR(20) NOT NULL,
+    exchange VARCHAR(10),
+    alarm_type INT NOT NULL, -- 0 for up, 1 for down
     price FLOAT8 NOT NULL,
+    description VARCHAR(70),
     created_at TIMESTAMPTZ NOT NULL,
-    status INT NOT NULL,
+    status INT NOT NULL DEFAULT 0, -- 0 is active, 1 is inactive
     user_uid UUID REFERENCES users(user_uid)
 );
 
