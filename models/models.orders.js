@@ -237,10 +237,17 @@ const processOrdersWhenPricesUpdated = prices => {
                         const orders = data.rows;
                         for (order of orders) {
                             try {
+                                productPrices = JSON.parse(prices)[order.product];
+                                console.log(productPrices);
                                 const rows = prices[order.product];
                                 const filteredProduct = rows.filter(row => row[0] === order.exchange)[0];
                                 if (filteredProduct) {
                                     const tradingPrice = filteredProduct[1];
+                                    console.log(`order status = ${order.order_status}`);
+                                    console.log(`trading price = ${tradingPrice}`);
+                                    console.log(`placing price = ${order.placing_price}`);
+                                    console.log(`tp price = ${order.take_profit_price}`);
+                                    console.log(`sl price = ${order.stop_loss_price}`);
                                     switch (order.order_type) {
                                         case 0: // buy
                                             if (
@@ -364,7 +371,7 @@ const processOrdersWhenPricesUpdated = prices => {
 sub.subscribe("prices", function(err, count) {});
 
 sub.on("message", (channel, message) => {
-    console.log(`Received a message from channel ${channel} with message = ${message}`);
+    console.log(`Order model received a message from channel ${channel} with message = ${message}`);
     redis
         .get("prices")
         .then(prices => {

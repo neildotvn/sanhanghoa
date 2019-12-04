@@ -26,9 +26,14 @@ module.exports = {
     },
     updateUserInfo: values => {
         return {
-            text:
-                "UPDATE users SET full_name=$1, address=$2, date_of_birth=$3, email=$4, gender=$5 WHERE user_uid=$6",
+            text: "UPDATE users SET full_name=$1, address=$2, date_of_birth=$3, email=$4, gender=$5 WHERE user_uid=$6",
             values
+        };
+    },
+    setPushToken: (user_uid, push_token) => {
+        return {
+            text: "UPDATE users SET push_token=$2 WHERE user_uid=$1",
+            values: [user_uid, push_token]
         };
     }
 };

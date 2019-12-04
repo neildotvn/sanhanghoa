@@ -50,22 +50,17 @@ const register = info => {
                                 bcryptHash(info.password).then(hash => {
                                     info.password = hash;
                                     info.account_uid = account.account_uid;
-                                    client
-                                        .query(userQueries.registerQuery(info))
-                                        .then(
-                                            data => {
-                                                client.release();
-                                                resolve(data);
-                                            },
-                                            err => {
-                                                client.release();
-                                                reject(err);
-                                                console.log(
-                                                    "register error!",
-                                                    err
-                                                );
-                                            }
-                                        );
+                                    client.query(userQueries.registerQuery(info)).then(
+                                        data => {
+                                            client.release();
+                                            resolve(data);
+                                        },
+                                        err => {
+                                            client.release();
+                                            reject(err);
+                                            console.log("register error!", err);
+                                        }
+                                    );
                                 });
                             });
                         });
@@ -93,14 +88,10 @@ const login = info => {
                     } else {
                         console.log("exists = " + exists);
                         getUserByPhoneNumber(info.phone).then(user => {
-                            bcryptCompare(info.password, user.password).then(
-                                isMatch => {
-                                    if (isMatch)
-                                        resolve(_.omit(user, "password"));
-                                    else
-                                        reject(new Error(401, "Unauthorized!"));
-                                }
-                            );
+                            bcryptCompare(info.password, user.password).then(isMatch => {
+                                if (isMatch) resolve(_.omit(user, "password"));
+                                else reject(new Error(401, "Unauthorized!"));
+                            });
                         });
                     }
                 })
@@ -164,34 +155,21 @@ const updateUserInfo = user => {
                     .query(userQueries.getUserById(user.user_uid))
                     .then(data => {
                         const currentUser = data.rows[0];
-                        const values = [
-                            "full_name",
-                            "address",
-                            "date_of_birth",
-                            "email",
-                            "gender",
-                            "user_uid"
-                        ];
+                        const values = ["full_name", "address", "date_of_birth", "email", "gender", "user_uid"];
                         const updatingUser = _.pick(user, values);
                         for (const key in updatingUser) {
                             const value = updatingUser[key];
                             if (value) currentUser[key] = value;
                         }
-                        const updatedUserValues = _.values(
-                            _.pick(currentUser, values)
-                        );
+                        const updatedUserValues = _.values(_.pick(currentUser, values));
                         // return resolve(updatedUserValues);
-                        client
-                            .query(
-                                userQueries.updateUserInfo(updatedUserValues)
-                            )
-                            .then(
-                                data => {
-                                    console.log(data);
-                                    resolve(_.omit(currentUser, ["password"]));
-                                },
-                                err => reject(err)
-                            );
+                        client.query(userQueries.updateUserInfo(updatedUserValues)).then(
+                            data => {
+                                console.log(data);
+                                resolve(_.omit(currentUser, ["password"]));
+                            },
+                            err => reject(err)
+                        );
                     })
                     .catch(err => {
                         reject(err);
@@ -210,4 +188,19 @@ const bcryptHash = password =>
 
 const bcryptCompare = (password, hash) => bcrypt.compare(password, hash);
 
-module.exports = { register, login, getUserById, updateUserInfo };
+const setPushToken = req => {
+    return new Promise((resolve, reject) => {
+        pool.connect().then(
+            client => {
+                client
+                    .query(userQueries.setPushToken(req.auth.user_uid, req.body.push_token))
+                    .then(() => resolve())
+                    .catch(err => reject(err))
+                    .finally(() => client.release());
+            },
+            err => reject(err)
+        );
+    });
+};
+
+module.exports = { register, login, getUserById, updateUserInfo, setPushToken };

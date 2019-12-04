@@ -17,6 +17,7 @@ create table users (
     email VARCHAR(100),
     gender VARCHAR(7),
     account_uid UUID REFERENCES account(account_uid) NOT NULL,
+    push_token TEXT,
     UNIQUE(phone),
     UNIQUE(account_uid)
 );
@@ -65,7 +66,7 @@ create table alarm (
     alarm_uid UUID NOT NULL PRIMARY KEY,
     product VARCHAR(20) NOT NULL,
     exchange VARCHAR(10),
-    alarm_type INT NOT NULL, -- 0 for up, 1 for down
+    alarm_type INT NOT NULL, -- 0 for up (expect higher than current), 1 for down
     price FLOAT8 NOT NULL,
     description VARCHAR(70),
     created_at TIMESTAMPTZ NOT NULL,
