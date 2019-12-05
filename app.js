@@ -33,6 +33,4 @@ app.use((err, req, res, next) => {
     }
 });
 
-app.listen(config.port, () =>
-    console.log(`Server is up on port ${config.port}!`)
-);
+app.listen(config.port, () => console.log(`Server is up on port ${config.port}!`));

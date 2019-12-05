@@ -5,7 +5,7 @@ const jwtSecret = "hehe";
 class AuthMiddleware {
     static async authenticate(req, res, next) {
         const auth = await AuthMiddleware.processToken(req);
-        console.log(this, auth);
+        // console.log(this, auth);
 
         if (auth.payload) {
             req.auth = auth.payload;
@@ -17,7 +17,7 @@ class AuthMiddleware {
 
     static processToken(req) {
         const result = {};
-        console.log(req.headers);
+        // console.log(req.headers);
         if (!req.headers["authorization"]) {
             result.status = 401;
             result.message = "Token is empty!";

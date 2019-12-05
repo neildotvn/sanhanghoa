@@ -99,7 +99,7 @@ const deleteAlarmByAlarmId = alarm_uid => {
 sub.subscribe("prices", function(err, count) {});
 
 sub.on("message", (channel, message) => {
-    console.log(`Alarm model received a message from channel ${channel} with message = ${message}`);
+    // console.log(`Alarm model received a message from channel ${channel} with message = ${message}`);
     redis
         .get("prices")
         .then(prices => {

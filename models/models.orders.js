@@ -4,6 +4,7 @@ const redis = new Redis();
 const sub = new Redis();
 const ordersQueries = require("../db/queries/queries.orders");
 const accountModel = require("../models/models.account");
+const Error = require("../utils/custom_error");
 const _ = require("lodash");
 
 const orderFields = () => {
@@ -157,50 +158,63 @@ const closeOrder = order_uid => {
             .then(client => {
                 client
                     .query(ordersQueries.getOrderById(order_uid))
-                    .then(
-                        orderResult => {
-                            const order = orderResult.rows[0];
-                            redis.get("prices").then(
-                                prices => {
-                                    const closingPrice = getRowDataWithProductAndExchange(
-                                        JSON.parse(prices),
-                                        order.product,
-                                        order.exchange
-                                    )[1];
-                                    client.query(ordersQueries.closeOrderById(order_uid, closingPrice)).then(
-                                        data => {
-                                            resolve("success");
-                                            let value = 0;
-                                            if (
-                                                order.order_type === 0 ||
-                                                order.order_type === 2 ||
-                                                order.order_type === 4
-                                            ) {
-                                                value = order.volume * (closingPrice - order.placing_price);
-                                            } else {
-                                                value = order.volume * (order.placing_price - closingPrice);
-                                            }
-                                            accountModel.updateAccountByChange(order.account_uid, value);
-                                        },
-                                        err => {
-                                            console.log(err);
-                                            reject(err);
+                    .then(orderResult => {
+                        const order = orderResult.rows[0];
+                        redis.get("prices").then(
+                            prices => {
+                                let closingPrice = getRowDataWithProductAndExchange(
+                                    JSON.parse(prices),
+                                    order.product,
+                                    order.exchange
+                                )[1];
+                                if (isNaN(closingPrice)) {
+                                    closingPrice = Number(closingPrice.replace("s", "").replace(",", ""));
+                                }
+                                console.log(`closingPrice = ${closingPrice}`);
+                                client.query(ordersQueries.closeOrderById(order_uid, closingPrice)).then(
+                                    data => {
+                                        let value = 0;
+                                        if (
+                                            order.order_type === 0 ||
+                                            order.order_type === 2 ||
+                                            order.order_type === 4
+                                        ) {
+                                            value =
+                                                order.volume *
+                                                (closingPrice - order.placing_price) *
+                                                leverageValues[order.product];
+                                        } else {
+                                            value =
+                                                order.volume *
+                                                (order.placing_price - closingPrice) *
+                                                leverageValues[order.product];
                                         }
-                                    );
-                                },
-                                err => console.log(err)
-                            );
-                        },
+
+                                        accountModel
+                                            .updateAccountByChange(order.account_uid, value)
+                                            .then(() => resolve("success"))
+                                            .catch(err => reject(new Error(err)));
+                                    },
+                                    err => {
+                                        console.log(err);
+                                        reject(new Error(err));
+                                    }
+                                );
+                            },
+                            err => console.log(new Error(err))
+                        );
+                    })
+                    .catch(() => {
                         err => {
                             console.log(err);
-                            reject(err);
-                        }
-                    )
+                            reject(new Error(err));
+                        };
+                    })
                     .finally(() => client.release());
             })
             .catch(err => {
                 console.log(err);
-                reject(err);
+                reject(new Error(err));
             });
     });
 };
@@ -231,33 +245,43 @@ const processOrdersWhenPricesUpdated = prices => {
     pool.connect()
         .then(client => {
             client
-                .query("SELECT * FROM orders WHERE order_status=0")
+                .query("SELECT * FROM orders WHERE order_status=0 OR order_status=1")
                 .then(
                     data => {
                         const orders = data.rows;
                         for (order of orders) {
                             try {
                                 productPrices = JSON.parse(prices)[order.product];
-                                console.log(productPrices);
-                                const rows = prices[order.product];
-                                const filteredProduct = rows.filter(row => row[0] === order.exchange)[0];
+                                let filteredProduct;
+                                if (order.exchange.includes("ICE")) {
+                                    filteredProduct = productPrices.ice.filter(
+                                        row => row[0] === order.exchange.substring(4)
+                                    )[0];
+                                } else if (order.exchange.includes("NYB")) {
+                                    filteredProduct = productPrices.nyb.filter(
+                                        row => row[0] === order.exchange.substring(4)
+                                    )[0];
+                                }
+                                console.log("**************");
+                                console.log(filteredProduct);
+                                console.log("**************");
                                 if (filteredProduct) {
-                                    const tradingPrice = filteredProduct[1];
-                                    console.log(`order status = ${order.order_status}`);
-                                    console.log(`trading price = ${tradingPrice}`);
-                                    console.log(`placing price = ${order.placing_price}`);
-                                    console.log(`tp price = ${order.take_profit_price}`);
-                                    console.log(`sl price = ${order.stop_loss_price}`);
+                                    let currentPrice = Number(filteredProduct[1]);
+                                    if (isNaN(currentPrice)) {
+                                        currentPrice = Number(filteredProduct[1].replace("s", "").replace(",", ""));
+                                    }
+                                    console.log(`currentPrice = ${currentPrice}`);
+                                    console.log(`order.placing_price = ${order.placing_price}`);
                                     switch (order.order_type) {
                                         case 0: // buy
                                             if (
                                                 order.take_profit_price != null &&
-                                                tradingPrice > order.take_profit_price
+                                                currentPrice > order.take_profit_price
                                             ) {
                                                 closeOrder(order.order_uid);
                                             } else if (
                                                 order.stop_loss_price != null &&
-                                                tradingPrice < order.stop_loss_price
+                                                currentPrice < order.stop_loss_price
                                             ) {
                                                 closeOrder(order.order_uid);
                                             }
@@ -265,30 +289,30 @@ const processOrdersWhenPricesUpdated = prices => {
                                         case 1: // sell
                                             if (
                                                 order.take_profit_price != null &&
-                                                tradingPrice < order.take_profit_price
+                                                currentPrice < order.take_profit_price
                                             ) {
                                                 closeOrder(order.order_uid);
                                             } else if (
                                                 order.stop_loss_price != null &&
-                                                tradingPrice > order.stop_loss_price
+                                                currentPrice > order.stop_loss_price
                                             ) {
                                                 closeOrder(order.order_uid);
                                             }
                                             break;
                                         case 2: // buy limit
                                             if (order.order_status === 1) {
-                                                if (tradingPrice < order.placing_price) {
+                                                if (currentPrice < order.placing_price) {
                                                     activateOrder(order.order_uid);
                                                 }
                                             } else {
                                                 if (
                                                     order.take_profit_price != null &&
-                                                    tradingPrice > order.take_profit_price
+                                                    currentPrice > order.take_profit_price
                                                 ) {
                                                     closeOrder(order.order_uid);
                                                 } else if (
                                                     order.stop_loss_price != null &&
-                                                    tradingPrice < order.stop_loss_price
+                                                    currentPrice < order.stop_loss_price
                                                 ) {
                                                     closeOrder(order.order_uid);
                                                 }
@@ -296,18 +320,18 @@ const processOrdersWhenPricesUpdated = prices => {
                                             break;
                                         case 3: // sell limit
                                             if (order.order_status === 1) {
-                                                if (tradingPrice > order.placing_price) {
+                                                if (currentPrice > order.placing_price) {
                                                     activateOrder(order.order_uid);
                                                 }
                                             } else {
                                                 if (
                                                     order.take_profit_price != null &&
-                                                    tradingPrice < order.take_profit_price
+                                                    currentPrice < order.take_profit_price
                                                 ) {
                                                     closeOrder(order.order_uid);
                                                 } else if (
                                                     order.stop_loss_price != null &&
-                                                    tradingPrice > order.stop_loss_price
+                                                    currentPrice > order.stop_loss_price
                                                 ) {
                                                     closeOrder(order.order_uid);
                                                 }
@@ -315,18 +339,18 @@ const processOrdersWhenPricesUpdated = prices => {
                                             break;
                                         case 4: // buy stop
                                             if (order.order_status === 1) {
-                                                if (tradingPrice > order.placing_price) {
+                                                if (currentPrice > order.placing_price) {
                                                     activateOrder(order.order_uid);
                                                 }
                                             } else {
                                                 if (
                                                     order.take_profit_price != null &&
-                                                    tradingPrice > order.take_profit_price
+                                                    currentPrice > order.take_profit_price
                                                 ) {
                                                     closeOrder(order.order_uid);
                                                 } else if (
                                                     order.stop_loss_price != null &&
-                                                    tradingPrice < order.stop_loss_price
+                                                    currentPrice < order.stop_loss_price
                                                 ) {
                                                     closeOrder(order.order_uid);
                                                 }
@@ -335,18 +359,18 @@ const processOrdersWhenPricesUpdated = prices => {
                                             break;
                                         case 5: // sell stop
                                             if (order.order_status === 1) {
-                                                if (tradingPrice < order.placing_price) {
+                                                if (currentPrice < order.placing_price) {
                                                     activateOrder(order.order_uid);
                                                 }
                                             } else {
                                                 if (
                                                     order.take_profit_price != null &&
-                                                    tradingPrice < order.take_profit_price
+                                                    currentPrice < order.take_profit_price
                                                 ) {
                                                     closeOrder(order.order_uid);
                                                 } else if (
                                                     order.stop_loss_price != null &&
-                                                    tradingPrice > order.stop_loss_price
+                                                    currentPrice > order.stop_loss_price
                                                 ) {
                                                     closeOrder(order.order_uid);
                                                 }
@@ -360,18 +384,18 @@ const processOrdersWhenPricesUpdated = prices => {
                         }
                     },
                     err => {
-                        console.log(e);
+                        console.log(err);
                     }
                 )
                 .finally(() => client.release());
         })
-        .catch(err => console.log(e));
+        .catch(err => console.log(err));
 };
 
 sub.subscribe("prices", function(err, count) {});
 
 sub.on("message", (channel, message) => {
-    console.log(`Order model received a message from channel ${channel} with message = ${message}`);
+    // console.log(`Order model received a message from channel ${channel} with message = ${message}`);
     redis
         .get("prices")
         .then(prices => {

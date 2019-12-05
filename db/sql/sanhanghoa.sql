@@ -2,7 +2,7 @@ CREATE EXTENSION "uuid-ossp";
 
 create table account (
     account_uid UUID NOT NULL PRIMARY KEY,
-    balance BIGINT NOT NULL DEFAULT 5000,
+    balance INT NOT NULL DEFAULT 5000,
     credit INT NOT NULL DEFAULT 0,
     leverage INT NOT NULL DEFAULT 50
 );

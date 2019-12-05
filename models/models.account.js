@@ -71,9 +71,9 @@ const getAccountInfoByUserId = user_uid => {
 
 const updateAccountByChange = (account_uid, change) => {
     return new Promise((resolve, reject) => {
-        getAccountInfoByAccountId(account_uid).then(
-            account => {
-                const newBalance = account.balance + change;
+        getAccountInfoByAccountId(account_uid)
+            .then(account => {
+                const newBalance = account.balance + Number(change);
                 pool.connect().then(client => {
                     client
                         .query(accountQueries.updateAccount(account_uid, newBalance))
@@ -82,16 +82,15 @@ const updateAccountByChange = (account_uid, change) => {
                                 resolve("Account updated successfully!");
                             },
                             err => {
-                                reject(err);
+                                reject(new Error(err));
                             }
                         )
                         .finally(() => client.release());
                 });
-            },
-            err => {
-                reject(err);
-            }
-        );
+            })
+            .catch(err => {
+                reject(new Error(err));
+            });
     });
 };
 
