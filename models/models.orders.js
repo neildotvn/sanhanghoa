@@ -394,15 +394,15 @@ const processOrdersWhenPricesUpdated = prices => {
 
 sub.subscribe("prices", function(err, count) {});
 
-sub.on("message", (channel, message) => {
-    // console.log(`Order model received a message from channel ${channel} with message = ${message}`);
-    redis
-        .get("prices")
-        .then(prices => {
-            processOrdersWhenPricesUpdated(prices);
-        })
-        .catch(err => console.log(err));
-});
+// sub.on("message", (channel, message) => {
+//     // console.log(`Order model received a message from channel ${channel} with message = ${message}`);
+//     redis
+//         .get("prices")
+//         .then(prices => {
+//             processOrdersWhenPricesUpdated(prices);
+//         })
+//         .catch(err => console.log(err));
+// });
 
 const getRowDataWithProductAndExchange = (prices, product, exchange) => {
     const data = prices[product];
